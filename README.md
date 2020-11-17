@@ -14,6 +14,11 @@ Follow these standard workflows for a jumping off point in your analyses.
 - [FAPROTAX and Functions](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/faprotax_demo.html)
 - Source Sink Dynamics
 
+
+### General Help
+
+- [Installing Python](https://mgaley-004.github.io/MiSeq-Analysis/Help/Python.html)
+
 ### Other Helpful Packages and Tutorials
 
 - Having trouble in mothur? Check the [SOP](https://mothur.org/wiki/miseq_sop/) and the [wiki](https://mothur.org/wiki/mothur_manual/)
