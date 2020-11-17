@@ -1,0 +1,520 @@
+---
+title: "FAPROTAX for Wild Rice"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+FAPROTAX is a handy tool that indexes the taxonomy of your OTUs or ASVs with a database of known phenotypic functions based on published literature.
+
+This documents describes how to get your phyloseq/mothur files into a format that [FAPROTAX](http://www.loucalab.com/archive/FAPROTAX/lib/php/index.php?section=Home) enjoys. You should have a functioning version of Python and FAPROTAX installed on your computer before beginning this workflow. For recommendations on installing Python, see [here](https://mgaley-004.github.io/MiSeq-Analysis/Help/Python.html).
+
+# Standard Setup
+```{r echo=TRUE, warning=FALSE, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(ape)
+library(plyr)
+library(gplots)
+library(lme4)
+library(tidyr)
+library(vegan)
+library(scales)
+library(gridExtra)
+library(grid)
+library(reshape2)
+library(phyloseq)
+library(stringr)
+library(compositions)
+library(zCompositions)
+
+##Side comment: Do I need all these packages? No, probably not. But it is more convenient generaly to copy and paste most of these packages into every document.
+
+
+
+m.g.colors <- c( "#999999", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#CBD588", "#5F7FC7", "orange","#DA5724", "#508578", "#CD9BCD",
+   "#AD6F3B", "#673770","#D14285", "#652926", "#C84248", 
+  "#8569D5", "#5E738F","#D1A33D", "#8A7C64", "#599861" )
+
+theme_set(theme_classic(base_size = 14))
+```
+
+# Prepare phyloseq files for FAPROTAX
+
+Load your otu table. FAPROTAX works with count data, not scaled reads. If you are planning on anlayzing your data using CLR transforms later, you should not select the even depth OTU table as it will contain fewer OTUs than are in your CLR transformed table. 
+
+```{r}
+otutable = read.csv("csvs/pt_evendepth_otu_table.csv", header=TRUE, row.names=1)
+otutable[1:4,1:4]
+
+# Calculate the total read count for your samples to use later
+raw.depth <- colSums(otutable)
+names(raw.depth) <- colnames(otutable)
+```
+
+Load your taxonomy information.
+
+```{r}
+taxtable = import_mothur(mothur_constaxonomy_file = "mothur_output/wr18.phylotype.cons.taxonomy")
+small.phylo = merge_phyloseq(taxtable, otu_table(otutable, taxa_are_rows = TRUE))
+small.phylo
+```
+
+Rename the columns.
+
+```{r}
+taxdf = data.frame(tax_table(small.phylo))
+taxdf[1:4,1:4]
+colnames(taxdf) <- c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus")
+```
+
+FAPROTAX wants one string with all the column names.
+
+```{r}
+taxdf$taxstring = paste(taxdf$Kingdom, taxdf$Phylum, taxdf$Class, taxdf$Order, taxdf$Family, taxdf$Genus, sep="; ")
+taxdf[1:4,]
+```
+
+We're now appending the taxonomy string as a column to the otu table. Save the otu table as a .tsv file and tell R to use a tab character as the separater. Quotes around the values will break FAPROTAX.
+```{r}
+otutable$taxonomy = taxdf[as.vector(row.names(otutable)),"taxstring"]
+otutable[1:4,]
+write.table(otutable, "faprotax.taxon.table.tsv", sep = "\t", quote=FALSE)
+```
+Note that this output is not quite what faprotax expects yet. **Change the first line to a comment and give the OTU column a name in your text editor.**
+
+# Run FAPROTAX
+
+FAPROTAX is a command line utility that relys on having python 3 installed on your system. I personally have had dependency problems running FAPROTAX with python 3.9 and recommend using python 3.7.
+
+In terminal or a shell of your choice, navigate to the directory where you have downloaded and unpacked FAPROTAX. [Handy reminders on UNIX vs MsDOS file system navigation](http://www.dba-oracle.com/t_windows_dos_unix_linux_commands.htm).
+
+If you are running MacOS or a Linux based OS:
+
+```{bash eval=FALSE, include=TRUE}
+./collapse_table.py -i faprotax.taxon.table.tsv -o out.functable.tsv -g FAPROTAX.txt -c '#' -d taxonomy --omit_columns 0 --column_names_are_in last_comment_line -r out.report.txt -v -s out_subtables/ -f
+```
+
+If you are running Windows:
+
+```{bash eval=FALSE, include=TRUE}
+python collapse_table.py -i faprotax.taxon.table.tsv -o out.functable.tsv -g FAPROTAX.txt -c '#' -d taxonomy --omit_columns 0 --column_names_are_in last_comment_line -r out.report.txt -v -s out_subtables/ -f
+```
+
+You may recieve many messages warning you that 'is' != ==, but don't worry. It's working.
+
+An explanation of all of the flags we used:
+
+- *./collapse_table.py* or *python collapse_table.py*     runs the main faprotax program
+- *-i* **faprotax.taxon.table.tsv**     this is the argument for the name of your input file.
+- *-o* **out.functable.tsv**     this is the argument for the name of the output file you want.
+- *-g* **FAPROTAX.txt**     this is the name of the faprotax database. don't change this.
+- *-c* **'#'**     this tells faprotax that '#' is the comment character. don't change.
+- *-d* **taxonomy**     this tells faprotax to look for taxonomy information in the column named 'taxonomy'. you would only change this if you changed the name of the column in the R code.
+- *--omit_columns* **0**     this tells faprotax to ignore the first column, which is just OTU names.
+- *--column_names_are_in_last_comment_line*     this tells faprotax where the sample names are. don't change.
+- *-r* **out.report.txt**     this gives faprotax the name for the report file to create.
+- *-v*     this makes visible output on your screen while faprotax is working. I find it reassuring.
+- *-s* **out_subtables/**     this tells faprotax to separate out and save otu_tables for each functional groups and store them in a folder called out_subtables. You don't need to make that folder first, faprotax will do it for you.
+- *-f*      this is optional. It tells faprotax that it's okay to overwrite filenames. I put this in there when I was troubleshooting this script and didn't want to keep making new file names.
+
+You can read additional documentation on how to run FAPROTAX on [their website](http://www.loucalab.com/archive/FAPROTAX/lib/php/index.php?section=Instructions).
+
+
+# FAPROTAX results
+
+## Broad patterns
+
+First we'll look at the major functions FAPROTAX identified in the samples regardless of taxonomy.
+
+You must remove the comment symbol from the first line of the results tsv for the following to work.
+
+```{r}
+otu.function.table <- read.table("csvs/wr18.functable.tsv", sep="\t", header=TRUE, row.names=1)
+
+#Discard functions identified in fewer than 10 reads
+otu.function.table <- otu.function.table[which(rowSums(otu.function.table) > 10),]
+#Discard samples where no functions were identified
+otu.function.table <- otu.function.table[,which(colSums(otu.function.table) > 1)]
+otu.function.table[1:4,1:4]
+
+#Check how many functions were identified
+dim(otu.function.table)
+
+#This normalizes the read counts to the total function identifications for each samples. An imperfect solution since FAPROTAX most likely did not assign a function to all of your OTUS. To check FAPROTAX's performance, read the report file.
+
+rel.otu.fn.table <- apply(otu.function.table,MARGIN = 2, FUN = function(x) x/sum(x))
+
+rel.otu.fn.df <- data.frame(rel.otu.fn.table)
+rel.otu.fn.df
+```
+
+The values in each cell are not relative to the read depth.
+
+Load metadata
+
+```{r}
+sampledata = read.csv("metadata_merged_mg.csv", row.names=1, header=TRUE)
+sampledata
+
+```
+
+Convert the results dataframe into a longform dataframe (melt it).
+
+```{r}
+#Make row names a column
+rel.otu.fn.df$BioFunction = row.names(rel.otu.fn.df)
+
+#melt
+otu.melt <- melt(rel.otu.fn.df, id.vars = "BioFunction")
+
+#make this a sparse dataframe
+otu.s.melt <- otu.melt[which(otu.melt$value > 0),] 
+
+```
+
+Pull relevant metadata and add to the melted dataframe.
+
+```{r}
+colnames(otu.s.melt) <- c("BioFunction", "SID", "Count")
+otu.s.melt$SuperSite <- sampledata[as.vector(otu.s.melt$SID),"SuperSite"]
+otu.s.melt$PlantType <- sampledata[as.vector(otu.s.melt$SID),"PlantType"]
+otu.s.melt$SampleType <- sampledata[as.vector(otu.s.melt$SID),"SampleType"]
+otu.s.melt$Month <- sampledata[as.vector(otu.s.melt$SID),"Month"]
+otu.s.melt$SA_code <- sampledata[as.vector(otu.s.melt$SID),"SA_code"]
+otu.s.melt$wr.dens.cat <- sampledata[as.vector(otu.s.melt$SID),"wr.dens.cat"]
+otu.s.melt$wr.dens.scale <- sampledata[as.vector(otu.s.melt$SID),"wr.dens.scale"]
+
+otu.s.melt[1:10,]
+```
+
+### The Problem
+
+```{r}
+theme_set(theme_classic(base_size=12))
+
+ggplot(otu.s.melt[which(otu.s.melt$Count >= 0.1),], aes(x=SampleType, y=Count, fill=BioFunction)) + geom_bar(stat="identity", position="fill") + scale_fill_manual(values=c(m.g.colors, "pink"))
+```
+
+All this kind of chart can tell us about is how frequently OTUs were assigned a function out of all possible assignments. It's important to remember that FAPROTAX does not create a compositional dataset! OTUs are assigned to multiple categories. One obvious example is that 'aerobic chemoheterotrophs' are necessarily 'chemoheterotrophs', so the fact that the blue and gray bars take up most of the space in the chart *together* is really misleading. Many of the other assignments also overlap. For example, many of the identified nitrate reducing bacteria also happen to be iron respiring bacteria and chemoheterotrophs.
+
+That is why stacked bar charts and any kind of chart that implies a compositional set are inappropriate for this kind of data.
+
+### Solution: Relative Scaling
+
+This will not solve the bar chart problem, but will help to make the data itself more interpretable. Instead of normalizing the count values to the sum of the faprotax table, normalize them to the total read depth.
+
+```{r}
+rel.otu.fn.table <- sapply(colnames(otu.function.table), function(x) otu.function.table[,x]/raw.depth[x])
+
+rel.otu.fn.df <- data.frame(rel.otu.fn.table)
+row.names(rel.otu.fn.df) <- row.names(otu.function.table)
+
+rel.otu.fn.df[1:10,1:4]
+```
+
+Again, melt the dataframe.
+
+```{r}
+rel.otu.fn.df$BioFunction = row.names(rel.otu.fn.df)
+otu.melt <- melt(rel.otu.fn.df, id.vars = "BioFunction")
+
+otu.s.melt <- otu.melt[which(otu.melt$value > 0),] #make this a sparse dataframe
+
+```
+
+Assign metadata variables
+
+```{r}
+colnames(otu.s.melt) <- c("BioFunction", "SID", "Count")
+otu.s.melt$SuperSite <- sampledata[as.vector(otu.s.melt$SID),"SuperSite"]
+otu.s.melt$PlantType <- sampledata[as.vector(otu.s.melt$SID),"PlantType"]
+otu.s.melt$SampleType <- sampledata[as.vector(otu.s.melt$SID),"SampleType"]
+otu.s.melt$Month <- sampledata[as.vector(otu.s.melt$SID),"Month"]
+otu.s.melt$SA_code <- sampledata[as.vector(otu.s.melt$SID),"SA_code"]
+otu.s.melt$wr.dens.cat <- sampledata[as.vector(otu.s.melt$SID),"wr.dens.cat"]
+otu.s.melt$wr.dens.scale <- sampledata[as.vector(otu.s.melt$SID),"wr.dens.scale"]
+```
+
+
+### Solution: Visualization
+
+```{r}
+otu.s.melt$BioFunction <- as.factor(otu.s.melt$BioFunction)
+
+#Optionally, abbreviate the long names of the FAPROTAX functions to make your charts more readable. 
+
+otu.s.melt$ShortFunction <- otu.s.melt$BioFunction
+levels(otu.s.melt$ShortFunction) <- c("ONH3O", "OCHT", "ONO3O", "ANMHD", "APSY", "AOPHAT", "AOPHATS", "ARCD", "ARHD", "CELL", "CHT", "CHIT", "CLRE", "CYAN", "DH2O", "DFEO", "DSCO", "DSO", "DENI", "FERM", "FURE", "HUAS", "HUGU", "HUPA", "HCDE", "INPA", "FERE", "MAGU", "CHO", "CHT", "CHLT", "NO3DE", "NO3RE", "NO3RS", "NO2F", "NO2DEN", "NO2RS", "N2FX", "N2RS", "NODEN", "OPHAT", "PHAT", "PHHT", "PHT", "PRED", "REDACT", "SCRES", "SO4RES", "SO3RES", "SRES", "TSRES", "UREO")
+```
+
+Heat maps! They don't imply a composition and also let you off the hook for picking colors.
+
+```{r}
+# Choose a smaller font size
+theme_set(theme_classic(base_size=8))
+
+sorted.melt <- otu.s.melt
+
+```
+
+```{r}
+ggplot(sorted.melt[which(sorted.melt$Count >= 0.02),], aes(x=SID, y=tolower(ShortFunction), fill=Count)) + geom_tile() + scale_fill_viridis_c(limits=c(0,0.3)) + theme(axis.text.x = element_blank()) + ylab("FAPROTAX Function") + facet_wrap(~SampleType, scales = "free_x")
+
+#Save your work!
+#ggsave("faprotax_bysample.pdf",width=7, height=5, units="in", dpi=300) 
+```
+
+Play around with different faceting variables.
+
+```{r}
+ggplot(sorted.melt[which(sorted.melt$Count >= 0.02 & !is.na(sorted.melt$wr.dens.cat)),], aes(x=SID, y=tolower(ShortFunction), fill=Count)) + geom_tile() + scale_fill_viridis_c(limits=c(0,0.3)) + theme(axis.text.x = element_blank()) + ylab("FAPROTAX Function") + facet_wrap(~wr.dens.cat, scales = "free_x")
+
+#ggsave("faprotax_bywrdens.pdf",width=7, height=5, units="in", dpi=300)
+```
+
+Always save incrementally.
+```{r eval=FALSE}
+write.csv(sorted.melt, "csvs/faprotax_functions_melt.csv")
+```
+
+## Taxonomy Details
+
+The subtables that FAPROTAX outputs contain details about the taxonomy of OTUs assigned to each function. You can import these into R easily if you first delete the '#' symbol at the beginning of the first line.
+
+Let's look at nitrate respiration as an example. The easiest way to do this is to simply pull the taxonomies of OTUs from the subtables and then subset an existing phyloseq object. That way, you can use any transformation you would like of the underlying count values.
+
+```{r}
+no3rs.df <- read.csv("faprotax/nitrate_respiration.txt", sep="\t", header=TRUE)
+no3rs.df$taxonomy <- row.names(no3rs.df)
+
+# Extract genus names
+
+nitrate.Genus <- as.vector(sapply(no3rs.df$taxonomy, function(x) str_split(x, "; ")[[1]][6]))
+
+nitrate.Genus
+```
+
+In this example, I'm going to use the even depth OTU table I used to run FAPROTAX, but you can use any version of the OTU table. For further analysis using CLR transforms, it would make the most sense to not use an even depth table.
+
+```{r}
+otutable = read.csv("csvs/pt_evendepth_otu_table.csv", header=TRUE, row.names=1)
+
+fap.phylo <- merge_phyloseq(otu_table(otutable, taxa_are_rows=TRUE), tax_table(as.matrix(taxdf)), sample_data(sampledata))
+
+fap.phylo
+```
+
+```{r}
+nitrate.otus <- row.names(taxdf[which(taxdf$Genus %in% nitrate.Genus),])
+nitrate.otus # 22 OTUs
+
+#Relative Abundance
+nitrate.phylo.rel <- transform_sample_counts(fap.phylo, function(x) x/sum(x)) %>% prune_taxa(taxa_names(fap.phylo) %in% nitrate.otus, .) %>% prune_samples(sample_sums(.) > 0,.)
+
+nitrate.phylo.rel
+```
+
+There are a small number of OTUs, so we can visualize the OTUs directly.
+
+## Visualization
+
+
+I'll first show you how to visualize relative abundance, but as I've mentioned many many many many many times, I really think it's more appropriate to use proportional abundance, so I'll show you that next.
+
+### Relative Abundance
+
+```{r}
+nitrate.melt <- psmelt(nitrate.phylo.rel)
+#Make a new variable with OTU and Genus labels
+nitrate.melt$Otu.Genus <- paste(nitrate.melt$Genus, nitrate.melt$OTU, sep=": ")
+```
+
+```{r}
+ggplot(nitrate.melt, aes(x=Sample, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_viridis_c() + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank())
+```
+
+Facet using some variable of interest
+
+```{r}
+ggplot(nitrate.melt, aes(x=Sample, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_viridis_c() + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+```
+
+You will be tempted to use something other than 'Sample' for the x variable in these charts, which is fine, but you should think about what statistic the heatmap is calculating and whether or not that's what you want. Geom_tile will calculate the sum for each category if there's more than one value in each x axis bin. That might be what you want, but you probably want the *mean* value. A little extra work is required, using tidyverse:
+
+```{r}
+
+nitrate.avgs <- nitrate.melt %>% group_by(Otu.Genus, SampleType, SuperSite) %>% dplyr::summarize(Abundance=mean(Abundance))
+
+nitrate.avgs
+```
+
+```{r}
+ggplot(nitrate.avgs, aes(x=SuperSite, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_viridis_c() + ylab("Genus: OTU") + xlab("Site")+ facet_wrap(~SampleType, scales="free_x")
+```
+
+I think looking at the heatmap here, it seems clear that the values should be log transformed to really see the differences between samples. In that case, let's use the centered log ratio transform.
+
+The other reason to do so is because interpreting relative abundance values for individual bacterial OTUs is hard. It's easy to interpret that 70% of reads in a sample being Actinobacteria means that phylum is dominant. But is 5% a lot for just one bacterial OTU? What about 0.5%? Keep in mind that in this working example, each sample was scaled to have a maximum of 5000 OTUs.
+
+### Proportional Abundance
+
+This is the standard function I always use.
+
+```{r}
+transform.clr <- function(otu.df){
+  d.1 <- data.frame(otu.df[which(rowSums(otu.df) > 10),], 
+    check.names=F)
+  d.czm <- t(cmultRepl(t(d.1), label=0, method="CZM"))
+  d.clr <- apply(d.czm, 2, function(x){log(x) - mean(log(x))})
+  return(d.clr)
+}
+```
+
+It is legitimate to transform your values after or before your subset. Think about what question you're trying to answer. Does it matter how abundant the nitrate respiring OTUs are relative to all of the OTUs in a sample, or do you care about their abundance relative only to other nitrate respiring OTUs within a sample? In this case, I've chosen to scale relative to all OTUs.
+
+```{r}
+rel.otu.table <- transform.clr(data.frame(otu_table(fap.phylo)))
+rel.fap.phylo <- merge_phyloseq(otu_table(rel.otu.table, taxa_are_rows=TRUE), tax_table(fap.phylo), sample_data(fap.phylo))
+
+nitrate.phylo.rel <- prune_taxa(taxa_names(rel.fap.phylo) %in% nitrate.otus, rel.fap.phylo)
+```
+
+
+Melt the dataframe. 
+```{r}
+nitrate.melt <- psmelt(nitrate.phylo.rel)
+#Make a new variable with OTU and Genus labels
+nitrate.melt$Otu.Genus <- paste(nitrate.melt$Genus, nitrate.melt$OTU, sep=": ")
+```
+
+This time, we need to change our color map. Relative abundance is from a scale of [0,1], but proportional abundance varies from (- $\infty$, + $\infty$), so a diverging color map is more appropriate. The default is to set the middle value to 0, which is correct for us.
+
+```{r}
+ggplot(nitrate.melt, aes(x=Sample, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_gradient2(high=muted("red"), low=muted("blue")) + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+```
+
+For proportional abundance, it matters so much more to give geom_tile appropriately summarised data if you want to change the x axis variable because you should definitely not be adding CLR transformed values together. Let me demonstrate.
+
+Here's the naive approach:
+
+```{r}
+ggplot(nitrate.melt, aes(x=SuperSite, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_gradient2(high=muted("red"), low=muted("blue")) + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+```
+
+And here's appropriately averaged:
+
+```{r}
+nitrate.avgs <- nitrate.melt %>% group_by(Otu.Genus, SampleType, SuperSite) %>% dplyr::summarise(Abundance=mean(Abundance))
+
+ggplot(nitrate.avgs, aes(x=SuperSite, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_gradient2(high=muted("red"), low=muted("blue")) + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+```
+
+
+Quite a difference. Though keep in mind, the abundance color map has changed. We can enforce limits on it to make it easier to compare between graphs.
+
+```{r}
+summary(nitrate.melt$Abundance)
+```
+
+Choose values based on the minimum and maximum values of your  most varied set.
+
+```{r}
+ggplot(nitrate.melt, aes(x=Sample, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_gradient2(high=muted("red"), low=muted("blue"), limits=c(-2, 5)) + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+
+ggplot(nitrate.avgs, aes(x=SuperSite, y=Otu.Genus, fill=Abundance)) + geom_tile() + scale_fill_gradient2(high=muted("red"), low=muted("blue"), limits=c(-2,5)) + ylab("Genus: OTU") + xlab("") + theme(axis.text.x = element_blank()) + facet_wrap(~SampleType, scales="free_x")
+```
+
+# Beyond FAPROTAX
+
+As you might have noticed, FAPROTAX is not an exhaustive tool. If phenotypic function is a big part of your analysis, you probably have a more exhaustive list of Bacteria and Archaea capable of performing the function you're interested in. It's very easy to apply the same approaches used here to custom lists you create of genera and their associated functions.
+
+Here's an example using an extended list of iron metabolizing bacteria drawn from a Nature review.
+
+The .csv file is very simple, and has two columns named Reducers and Oxidizers with the names of associated microbial genera.
+
+```{r}
+iron <- read.csv("csvs/IronGenera.csv", header=TRUE)
+fe.red <- as.vector(iron$Reducers)
+fe.ox <- as.vector(iron$Oxidizers)
+fe.ox <- fe.ox[fe.ox != ""]
+fe.ox
+```
+
+Here I found the overlap between my custom lists and the tax table from my phyloseq object
+```{r}
+fe.ox.tax.table <- taxdf[which(taxdf$Genus %in% fe.ox),]
+unique(fe.ox.tax.table$Genus)
+
+fe.re.tax.table <- taxdf[which(taxdf$Genus %in% fe.red),]
+unique(fe.re.tax.table$Genus)
+```
+
+You can look at this data much like previous workflow with heatmaps, but you can also look directly at the proportion of iron oxidizing to iron reducing bacteria in different samples for example.
+
+Make a subset of non iron associated microbes
+```{r}
+not.fe.tax.table <- taxdf[which((!taxdf$Genus %in% fe.red) & (!taxdf$Genus %in% fe.ox)),]
+```
+
+Merge tables together
+```{r}
+fe.re.tax.table$Fe <- "Reduction"
+fe.ox.tax.table$Fe <- "Oxidation"
+not.fe.tax.table$Fe <- "Not Associated"
+
+fe.tax.table <- rbind(fe.re.tax.table, fe.ox.tax.table, not.fe.tax.table)
+
+dim(fe.tax.table)
+dim(taxdf)
+```
+
+```{r}
+# Add the iron variable to phyloseq object
+fe.phylo2g <- merge_phyloseq(otu_table(fap.phylo), tax_table(as.matrix(fe.tax.table)), sample_data(fap.phylo))
+
+fe.melt <- psmelt(fe.phylo2g)
+
+fe.summary <- fe.melt %>% dplyr::group_by(Sample, Fe) %>% dplyr::summarise(Abundance=sum(Abundance))
+
+fe.summary <- data.frame(fe.summary)
+
+fe.summary
+```
+
+```{r}
+fe.wide <- pivot_wider(fe.summary, id_cols=Sample, names_from=Fe, values_from=Abundance)
+fe.wide <- data.frame(fe.wide)
+
+row.names(fe.wide) <- fe.wide$Sample
+fe.wide <- subset(fe.wide, select=-c(Sample))
+
+fe.wide.clr <- data.frame(transform.clr(fe.wide))
+fe.wide.clr$Sample <- row.names(fe.wide.clr)
+```
+
+```{r}
+fe.wide.melt <- melt(fe.wide.clr, id.vars=c("Sample"))
+colnames(fe.wide.melt) <- c("Sample", "Fe", "Proportional.Abundance")
+fe.wide.melt <- data.frame(fe.wide.melt)
+
+fe.wide.melt$SampleType <- sampledata[fe.wide.melt$Sample, "SampleType"]
+fe.wide.melt$Site <- sampledata[fe.wide.melt$Sample, "SuperSite"]
+
+```
+
+```{r}
+theme_set(theme_classic(base_size=12))
+ggplot(fe.wide.melt, aes(x=SampleType, y=Proportional.Abundance, fill=Fe)) + geom_boxplot() + geom_hline(yintercept = 0, linetype=2, color="gray") 
+```
+
+
+
+
+
+
+
+
