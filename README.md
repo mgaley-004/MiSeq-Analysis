@@ -11,7 +11,7 @@ Follow these standard workflows for a jumping off point in your analyses.
 - Rarefactions and Diversity
 - Ordinations
 - Describing Major Lineages
-- FAPROTAX and Functions
+- [FAPROTAX and Functions](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/faprotax_demo.html)
 - Source Sink Dynamics
 
 ### Other Helpful Packages and Tutorials
