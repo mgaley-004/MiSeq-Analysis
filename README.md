@@ -1,37 +1,29 @@
-## Welcome to GitHub Pages
+## Chun Lab Repository
 
-You can use the [editor on GitHub](https://github.com/mgaley-004/MiSeq-Analysis/edit/main/README.md) to maintain and preview the content for your website in Markdown files.
+A home for R, mothur, and some python based solutions for analysing your HTS datasets.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Tutorials
 
-### Markdown
+Follow these standard workflows for a jumping off point in your analyses.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+- FastQ to Mothur
+- Data Cleanup and Organization in R
+- Rarefactions and Diversity
+- Ordinations
+- Describing Major Lineages
+- FAPROTAX and Functions
+- Source Sink Dynamics
 
-```markdown
-Syntax highlighted code block
+### Other Helpful Packages and Tutorials
 
-# Header 1
-## Header 2
-### Header 3
+- Having trouble in mothur? Check the [SOP](https://mothur.org/wiki/miseq_sop/) and the [wiki](https://mothur.org/wiki/mothur_manual/)
+- Compositional analysis is complicated. The ALDEx2 package, used here frequently, is really helpful and the Gloor lab has extensive documentation and a helpful [workshop](https://github.com/ggloor/CoDa_microbiome_tutorial/wiki)
+- I'm a big fan of [mixOmics](http://mixomics.org/). For fancier PCA options, check it out.
 
-- Bulleted
-- List
 
-1. Numbered
-2. List
+### Helpful Publications
 
-**Bold** and _Italic_ and `Code` text
+- Miranda's long list of favorite bioinformatics articles
 
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/mgaley-004/MiSeq-Analysis/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+### Authors
+Miranda Galey [@mgaley-004](https://github.com/mgaley-004/)
