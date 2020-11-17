@@ -1,0 +1,138 @@
+---
+title: "FastQ to mothur"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# V3-V4 16S rRNA MiSeq Workflow
+
+The V3-V4 region is suboptimal for use in mothur, as Pat Schloss [has made clear](https://mothur.org/blog/2016/Customization-for-your-region/) [many times](https://mothur.org/blog/2014/Why-such-a-large-distance-matrix/). However, it's still a very common sequencing product and it's entirely possible to do it.
+
+Our lab uses version 1.38 of the SILVA reference database for alignment and identification. Download those files directly to your scratchfolder on MSI using ``wget https://mothur.s3.us-east-2.amazonaws.com/wiki/silva.nr_v138.tgz`` and unpack using ``tar -xvf silva.nr_v138.tgz``. Note that these files have already been downloaded to the shared folder of our group space. You can not work with them directly, but you can make a copy into your own folder or your scratch folder.
+
+
+The following is adapted from the original [MiSeqSOP](https://mothur.org/wiki/miseq_sop/) from the mothur wikipedia site, with changes to fit the V3-V4 region. As such, I'm not going to annotate each command as the mothur website documentation is very thorough.
+
+These commands can be entered interactively as part of a batch script.
+
+>> Comments on workspace organization: it is really just easier to copy all of your fastq files to the same folder where you are are conducting your analysis. This is especially true if you are working throuhg a batchscript rather than interactively.
+Also remember to be polite and never work out of the home drive. Use the global scratch space.
+
+```{bash, eval=FALSE}
+set.dir(output=/scratch.global/yourname_suffix, input=/scratch.global/yourname_suffix);
+make.file(inputdir=/scratch.global/yourname_suffix)
+```
+
+Examine the .files that mothur just created. It should have three columns, pairing your forward and reverse read files with a sample name that mothur generates. You should change these sample names now to match the sample names in your metadata file.
+
+```{bash, eval=FALSE}
+make.contigs(file=wr18.files, trimoverlap=T);
+summary.seqs(fasta=wr18.trim.contigs.fasta);
+screen.seqs(fasta=current, group=wr18.contigs.groups, maxambig=0, maxlength=295, maxhomop=8);
+```
+
+A maximum length of 295 is what you should expect from fully overlapping PE300 ends.
+
+```{bash, eval=FALSE}
+summary.seqs(fasta=current);
+unique.seqs(fasta=current);
+count.seqs(name=current, group=current);
+summary.seqs(count=current, fasta=current);
+```
+
+You must create a custom reference file for the V3V4 region using the SILVA reference files. I've already done this for you! It's in the shared folder and is called silva.nr_v138.pcr.v3v4.align . If you want to create your own, or if you're not part of the Chun lab, you can use these commands to create one:
+
+```{bash, eval=FALSE}
+pcr.seqs(fasta=silva.nr_v138.align, start=11895, end=25318, keepdots=F);
+```
+
+If you were creating a reference file for only the v4 region and SILVA v 138, use these coordinates instead
+```{bash, eval=FALSE}
+pcr.seqs(fasta=silva.nr_v138.align, start=13859, end=23447, keepdots=F);
+```
+
+Resuming the original flow. 'current' will not work if you stopped to make a custom reference region. Look at the output of summary.seqs to find the correct name for the fasta argument.
+
+```{bash, eval=FALSE}
+align.seqs(fasta=current, reference=silva.nr_v138.pcr.v3v4.align);
+summary.seqs(fasta=current, count=current);
+screen.seqs(fasta=current, count=current, summary=wr18.trim.contigs.good.unique.summary, start=2, end=13423, maxhomop=8);
+summary.seqs(fasta=current, count=current);
+```
+
+The following command is not always necessary, but for very large datasets, it may be. This command truncates your sequences to only the V4 region, trimming about 50 bp. Unfortunately, it will still be lower quality since the tail end where sequence quality drops off is in the V4 region, not the V3 region. Do this only if you do not have the memory or processor resources to proceed without it. Note that your coordinates for screen.seqs will differ if this command is left out.
+
+```{bash, eval=FALSE}
+pcr.seqs(fasta=current, start=1967, end=11549, keepdots=F);
+summary.seqs(fasta=current, count=current);
+screen.seqs(fasta=current, count=current, summary=current, start=8, end=9582);
+```
+
+We are classifying sequences earlier on than the MiSeq SOP does. The naive bayes classifer that mothur implements (wang) does not depend on sequences being aligned but it is sensitive to being drawn from the correct region. We do it here to remove large amounts of Archaea and Unknown reads in the dataset. If you know that your samples are not likely to contain more than 5% Archaea then it might not be necessary. Removing them reduces the width of the overall alignment.
+
+```{bash, eval=FALSE}
+classify.seqs(fasta=current, count=current, reference=silva.nr_v138.pcr.v4.align, taxonomy=~/reference/silva.nr_v138.tax, cutoff=80);
+remove.lineage(fasta=current, count=current, taxonomy=current, taxon=Chloroplast-Mitochondria-unknown-Archaea-Eukaryota);
+```
+
+```{bash, eval=FALSE}
+summary.seqs(fasta=current, count=current);
+screen.seqs(fasta=current, count=current, start=8, end=9582);
+filter.seqs(fasta=current, vertical=T, trump=.);
+```
+
+This is a good checkpoint. The full length of your alignment should be < 600bp. If it is not, revisit earlier steps and think about doing things like removing Archaea or trimming to V4 only. If you've already done those things, consider what your hypotheses are and whether or not it would be possible to break your dataset up.
+
+This next chunk is straight from the SOP.
+
+```{bash, eval=FALSE}
+unique.seqs(fasta=current, count=current);
+summary.seqs(fasta=current, count=current);
+pre.cluster(fasta=current, count=current, diffs=1);
+summary.seqs(fasta=current, count=current);
+chimera.vsearch(fasta=current, count=current, dereplicate=t, vsearch=/scratch.global/galey_wr18/mothur/vsearch);
+remove.seqs(fasta=wr18.trim.contigs.good.unique.good.filter.unique.precluster.fasta, accnos=current);
+summary.seqs(fasta=current, count=current);
+classify.seqs(fasta=current, count=current, reference=silva.nr_v138.pcr.v4.align, taxonomy=~/reference/silva.nr_v138.tax, cutoff=80);
+remove.lineage(fasta=current, count=current, taxonomy=current, taxon=Chloroplast-Mitochondria-unknown-Archaea-Eukaryota);
+summary.seqs(fasta=current, count=current);
+summary.tax(taxonomy=current, count=current);
+```
+
+Optionally run this command if your dataset is extremely large and running without it has failed.
+```{bash, eval=FALSE}
+split.abund(fasta=current, count=current, cutoff=1);
+summary.seqs(fasta=wr18.trim.contigs.good.unique.good.pcr.good.pick.filter.unique.precluster.pick.pick.filter.abund.fasta, count=current)
+```
+
+Importantly, you must change the current fasta to the **abund** output of split.abund, not the **rare** output. Unfortunately, mothur defaults to **rare**.
+
+```{bash, eval=FALSE}
+dist.seqs(fasta=current, cutoff=0.03);
+cluster.split(column=current, count=current, cutoff=0.03, cluster=f, processors=24);
+cluster.split(file=current, processors=12);
+```
+
+cluster.split can be optimized for large datasets by splitting the command into two steps. The initial step of splitting the file is optimized by using many processors, but having too many processors slows down the second step of clustering sequences. The second step is optimized by having a large amount of RAM, so in extreme cases this can be run in two separate batch scripts with separate resource requests. cluster.split can also be adjusted to account for limited RAM by using the large=T argument. Learn about all of these options in the mothur [documentation](https://mothur.org/wiki/cluster.split/). 
+
+```{bash, eval=FALSE}
+make.shared(list=current, count=current, label=0.03);
+classify.otu(list=current, count=current, taxonomy=current, label=0.03);
+get.oturep(column=current, list=current, count=current);
+bin.seqs(list=current, fasta=current);
+quit();
+```
+
+get.oturep retrieves a representative sequence for each of your OTUs, which can be very useful for creating a tree later using tools like [PhyML](http://www.atgc-montpellier.fr/phyml/).
+
+bin.seqs retrieves a list of all sequences associated with each OTU, likewiseuseful for learning more about how your OTUs are related to known sequences for their assigned genus.
+
+# Troubleshooting
+
+## How do I know how much resources to request from the PBS scheduler?
+
+You don't really, but you can make an educated guess based on how long a small pilot study of your samples takes to run. After running a job, you can check its actual resource use in the .o logfiles. Make future requests based on those numbers. You should always run a small subset of a very large dataset first to catch problems (typos even) before you have waited 3 days for your job to run only to have it crash 5 minutes in.
+
