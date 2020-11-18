@@ -6,13 +6,13 @@ A home for R, mothur, and some python based solutions for analysing your HTS dat
 
 Follow these standard workflows for a jumping off point in your analyses.
 
-- FastQ to Mothur
+- [FastQ to Mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/fastQ2Mothur.html)
 - Data Cleanup and Organization in R
 - Rarefactions and Diversity
 - Ordinations
 - Describing Major Lineages
 - [FAPROTAX and Functions](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/faprotax_demo.html)
-- Source Sink Dynamics
+- [Source Sink Dynamics](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SourceSink.html)
 
 
 ### General Help
