@@ -1,0 +1,320 @@
+---
+title: "R Notebook"
+output: 
+   html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+bibliography: bioinfo.bib
+---
+
+This workflow is for using [Sourcetracker (v1)](https://github.com/danknights/sourcetracker) with phyloseq formatted objects. Download the sourcetracker script before beginning.
+
+The otu and tax tables have been saved as .csv files. 
+
+For more on sourcetracker [see @knights2011]
+
+# Set Up
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+
+library(ape)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library(gplots)
+library(lme4)
+library(tidyr)
+library(vegan)
+library(scales)
+library(grid)
+library(reshape2)
+
+library(gridExtra)
+
+m.g.colors <- c( "#999999", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#CBD588", "#5F7FC7", "orange","#DA5724", "#508578", "#CD9BCD",
+   "#AD6F3B", "#673770","#D14285", "#652926", "#C84248", 
+  "#8569D5", "#5E738F","#D1A33D", "#8A7C64", "#599861" )
+
+more.colors <- c("indianred1", "steelblue3",  "skyblue1", "mediumorchid","royalblue4", "olivedrab3",
+   "pink", "#FFED6F", "mediumorchid3", "ivory2", "tan1", "aquamarine3", "#C0C0C0",
+    "mediumvioletred", "#999933", "#666699", "#CC9933", "#006666", "#3399FF",
+   "#993300", "#CCCC99", "#666666", "#FFCC66", "#6699CC", "#663366", "#9999CC", "#CCCCCC",
+   "#669999", "#CCCC66", "#CC6600", "#9999FF", "#0066CC", "#99CCCC", "#999999", "#FFCC00",
+   "#009999", "#FF9900", "#999966", "#66CCCC", "#339966", "#CCCC33", "#EDEDED"
+)
+
+theme_set(theme_classic(base_size=12, base_family="Avenir"))
+```
+
+Read in the OTU table
+
+```{r}
+otu.table <- read.csv("TwoHarbors_OTU_table", row.names=1)
+otu.table
+```
+
+Read metadata file. I added a column named SourceSink (in excel) that labels each sample as either a source or a sink. You could also easily do this in R.
+
+```{r}
+metadata = read.csv("TwoHarbors_seq_metadata2.csv", header=TRUE, row.names=1)
+metadata
+```
+
+In this dataset, the most upstream site is site9 (skunk creek transition or skunk creek upstream)
+skunk creek tributary is upstream
+(below a retention pond)
+
+other skunk creek sites are downstream. most downstream is burlington bay
+
+agate bay:
+both storm water outfall and wastewater outfall can be sources
+beach is most downstream
+
+
+
+***Sourcetracker wants the sample names as rows in an otu table and the metadatafile, which is the opposite of how phyloseq likes it.***
+
+
+To make this run faster the first time, let's just look at families and rarefy to even depth using a quick scaling function
+
+
+```{r}
+library(phyloseq)
+tax.table <- read.csv("TwoHarbors_tax_table", header=TRUE, row.names=1)
+
+# This just scales the otu counts to the lowest depth in the table. You should use the bootstrapped version if you have it.
+mindepth <- min(colSums(otu.table))
+s.otu.table <- data.frame(apply(otu.table, 2, function(x) round(x*mindepth/sum(x))))
+
+#Replace single values with 0
+s.otu.table[s.otu.table==1] <- 0
+
+#Drop OTUs that are now all zeros
+s.otu.table <- s.otu.table[which(rowSums(s.otu.table)>0),]
+
+#Assemble phyloseq!
+mothur.data <- merge_phyloseq(otu_table(s.otu.table, taxa_are_rows=TRUE), tax_table(as.matrix(tax.table)), sample_data(metadata))
+
+mothur.data
+
+#To work with most public datasets of source, you'll need to agglomerate OTUs into some taxonomic rank. I tried with families and genera.
+family.glom <- tax_glom(mothur.data, taxrank="Family")
+
+genus.glom <- tax_glom(mothur.data, taxrank="Genus")
+
+
+#Break apart the phyloseq object into agate bay and skunk creek only
+ab.physeq <- prune_samples(sample_data(family.glom)$watershed == "Agate Bay", family.glom) %>% prune_taxa(taxa_sums(.) > 0,.)
+
+sc.physeq <- prune_samples(sample_data(family.glom)$watershed == "Skunk Creek", family.glom)%>% prune_taxa(taxa_sums(.) > 0,.)
+
+ab.physeq
+sc.physeq
+
+#make OTU tables
+ab.family.otus <- data.frame(otu_table(ab.physeq))
+sc.family.otus <- data.frame(otu_table(sc.physeq))
+
+#make metadata files that only have sc/ab samples.
+sc.metadata <- data.frame(sample_data(sc.physeq))
+ab.metadata <- data.frame(sample_data(ab.physeq))
+```
+
+
+# Skunk Creek 
+
+orientation fix from phyloseq style to sourcetracker style
+```{r}
+t.otus <- t(as.matrix(sc.family.otus))
+```
+
+
+Find indices of source and sink samples and put their category type in the variable called 'envs.'
+```{r}
+train.ix <- which(sc.metadata$SourceSink=='source')
+test.ix <- which(sc.metadata$SourceSink=='sink')
+envs <- sc.metadata$Site_location
+
+desc <- sc.metadata$Site_location
+
+```
+
+Change this line to reflect wherever you downloaded sourcetracker to
+```{r}
+source('/volumes/dean/chunlab/sourcetracker/src/SourceTracker.r')
+```
+
+
+tune the alpha values using cross-validation (this is slow! like very slow!) Use 0.001 if pressed for time.
+```{r, eval=FALSE}
+tune.results <- tune.st(t.otus[train.ix,], envs[train.ix])
+alpha1 <- tune.results$best.alpha1
+alpha2 <- tune.results$best.alpha2
+
+alpha1
+alpha2
+```
+
+```{r, include=FALSE}
+alpha1 <- 0.001
+alpha2 <- 0.001
+```
+
+
+Train sourcetracker using the source samples.  Be unafraid of an error message that says 'the condition has length > 1 and only the first element will be used.' Seems to be an internal bug that doesn't affect the outcome.
+
+```{r}
+st <- sourcetracker(t.otus[train.ix,], envs[train.ix])
+```
+
+Estimate source proportions in sink samples.
+```{r}
+results <- predict(st,t.otus[test.ix,], alpha1=alpha1, alpha2=alpha2)
+```
+
+This part validates the models we made using the original training data.
+```{r}
+results.train <- predict(st, alpha1=alpha1, alpha2=alpha2)
+```
+
+
+Here are some (really ugly) pie charts that sourcetracker will plot for you. You can also try type = 'bar' or 'dist' though I think really those outputs are not easily customizable.
+```{r}
+# plot results
+labels <- desc
+plot(results, labels[test.ix], type='pie')
+```
+
+```{r}
+# plot results with legend
+plot(results, labels[test.ix], type='pie', include.legend=TRUE)
+plot(results.train, labels[train.ix], type='pie', include.legend=TRUE)
+```
+
+Instead of using those plots, you can extract the results like so and then make all your plots in either base R or ggplot just like you've already learned to do.
+
+```{r}
+downstream <- data.frame(results$proportions)
+downstream$id <- row.names(downstream)
+meltdown <- melt(downstream, id.vars=c("id"))
+
+sc.metadata 
+
+colnames(meltdown) <- c("id", "Upstream.Site", "Proportion")
+meltdown$Downstream.Site <- sc.metadata[as.vector(meltdown$id), "Site_location"]
+meltdown$Date <- sc.metadata[as.vector(meltdown$id), "Date_sampled"]
+meltdown$Category <- sc.metadata[as.vector(meltdown$id), "sampling_category"]
+
+#Some manipulation here to create more variables. You can also do this in excel with your original metadata file before you start any of this if you'd rather. 
+meltdown$Month <- sapply(meltdown$Date, function(x) strsplit(x, "/")[[1]][1])
+meltdown
+```
+
+```{r}
+theme_set(theme_classic(base_size=10, base_family="Avenir"))
+
+ggplot(meltdown, aes(x=id, y=Proportion, fill=Upstream.Site)) + geom_bar(stat="identity") + facet_wrap(~Downstream.Site+Month, scales="free") + theme(axis.text.x = element_blank()) + scale_fill_manual(values=m.g.colors, name="Source Sites", labels=c("Skunk Creek Transition", "Skunk Creek Tributary", "Unknown")) + xlab("")
+```
+
+Save a high quality version.
+
+```{r, eval=FALSE}
+ggsave("skunkcreek_family_example_fwrap.png", width=7, height=5, dpi=300)
+```
+
+
+# Genus Skunk Creek
+
+This is the same analysis as above but with Genera rather than family and some fancier plotting at the end.
+
+```{r}
+sc.physeq <- prune_samples(sample_data(genus.glom)$watershed == "Skunk Creek", genus.glom)%>% prune_taxa(taxa_sums(.) > 0,.)
+
+sc.physeq
+
+sc.gen.otus <- data.frame(otu_table(sc.physeq))
+
+sc.metadata <- data.frame(sample_data(sc.physeq))
+```
+
+```{r}
+t.otus <- t(as.matrix(sc.gen.otus))
+train.ix <- which(sc.metadata$SourceSink=='source')
+test.ix <- which(sc.metadata$SourceSink=='sink')
+envs <- sc.metadata$Site_location
+
+desc <- sc.metadata$Site_location
+
+```
+
+```{r, eval=FALSE}
+tune.results <- tune.st(t.otus[train.ix,], envs[train.ix])
+alpha1 <- tune.results$best.alpha1
+alpha2 <- tune.results$best.alpha2
+
+alpha1
+alpha2
+```
+
+```{r}
+st <- sourcetracker(t.otus[train.ix,], envs[train.ix])
+```
+
+Estimate source proportions in test data
+```{r}
+results <- predict(st,t.otus[test.ix,], alpha1=alpha1, alpha2=alpha2)
+```
+
+```{r}
+results.train <- predict(st, alpha1=alpha1, alpha2=alpha2)
+```
+
+```{r}
+downstream <- data.frame(results$proportions)
+downstream$id <- row.names(downstream)
+meltdown <- melt(downstream, id.vars=c("id"))
+
+sc.metadata 
+
+colnames(meltdown) <- c("id", "Upstream.Site", "Proportion")
+meltdown$Downstream.Site <- sc.metadata[as.vector(meltdown$id), "Site_location"]
+meltdown$Date <- sc.metadata[as.vector(meltdown$id), "Date_sampled"]
+meltdown$Category <- sc.metadata[as.vector(meltdown$id), "sampling_category"]
+
+meltdown$Month <- as.factor(sapply(meltdown$Date, function(x) strsplit(x, "/")[[1]][1]))
+levels(meltdown$Month) <- c("June", "July", "August")
+meltdown$Day<- as.factor(sapply(meltdown$Date, function(x) strsplit(x, "/")[[1]][2]))
+
+meltdown$Rep <- as.factor(sapply(meltdown$id, function(x) strsplit(x, "_")[[1]][3]))
+levels(meltdown$Rep) <- c("A", "AA", "B")
+
+meltdown$Category <- as.factor(meltdown$Category)
+levels(meltdown$Category) <- c("B", "E")
+ 
+meltdown$SID <- as.factor(sapply(meltdown$id, function(x) strsplit(x, "_")[[1]][5]))
+
+meltdown$TypeRep <- paste(meltdown$Category, meltdown$Rep, meltdown$Day, sep=".")
+```
+
+```{r}
+theme_set(theme_classic(base_size=10, base_family="Avenir"))
+
+ggplot(meltdown, aes(x=TypeRep, y=Proportion, fill=Upstream.Site)) + geom_bar(stat="identity") + facet_wrap(~Downstream.Site+Month, scales="free_x") + scale_fill_manual(values=m.g.colors, name="Source Sites", labels=c("Skunk Creek Transition", "Skunk Creek Tributary", "Unknown")) + xlab("")
+
+
+ggplot(meltdown, aes(x=Category, y=Proportion, fill=Upstream.Site)) + geom_bar(stat="identity") + facet_grid(rows=vars(Downstream.Site), cols=vars(Month), space="free", scales="free_x") + scale_fill_manual(values=m.g.colors, name="Source Sites", labels=c("Skunk Creek Transition", "Skunk Creek Tributary", "Unknown")) + xlab("")
+```
+
+```{r, eval=FALSE}
+ggsave("skunkcreek_genera_example_fwrap.png", width=9, height=5, dpi=300)
+```
+
+
+
+
+
+
+
+
+
