@@ -9,7 +9,7 @@ Follow these standard workflows for a jumping off point in your analyses.
 - [FastQ to Mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/fastQ2Mothur.html)
 - Data Cleanup and Organization in R
 - Rarefactions and Diversity
-- Ordinations
+- [Ordinations and Redundancy Analysis](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/ordinationRDA.html)
 - Describing Major Lineages
 - [FAPROTAX and Functions](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/faprotax_demo.html)
 - [Source Sink Dynamics](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SourceSink.html)
