@@ -14,26 +14,24 @@ TERM=linux
 export TERM
 export FASTQLOC="/panfs/roc/groups/2/chun0157/data_release/umgc/miseq/200413_M00262_0047_000000000-J2LDF/Chun_Project_005_ITS_Redemult"
 export SITES="*NP*.gz *BRL*.gz"
-export MOTHURLOC="~/mothur"
 export PREFIX=its19
 export INTERPREFIX=mothur1
 export ITSXOUT=itsxo
 export PROCESSORS=$(nproc)
-export WDIR="/scratch.global/galey_its"
+export WDIR="/scratch.global/galey_ex"
 export REFERENCEFASTA=~/its_ref/UNITE.ITS1.good.fasta
 export REFERENCETAX=~/its_ref/ITS1.UNITE.good.full.taxonomy
 export FINALMOTHUR=mothur2
 export FINALFILENAME=pipeline_output.csv
 
-#set up
-
 if [ ! -d "$WDIR" ]; then
 	echo "creating directory $WDIR"
 	mkdir $WDIR
 else
-	echo "$WDIR exists. Make sure this directory is empty before beginning if you are not resuming a workflow."
+	echo "$WDIR exists. Make sure this directory is empty before beginning."
 fi
 
+cd $WDIR
 BATCH1=its_part1.batch
 BATCH2=its_part2.batch
 if [ ! -f "$BATCH1" ]; then
@@ -44,6 +42,10 @@ if [ ! -f "$BATCH2" ]; then
 	echo "downloading $BATCH2"
 	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
 fi
+
+#install the latest copy of mothur
+wget https://github.com/mothur/mothur/releases/download/v1.44.3/Mothur.linux.zip
+unzip Mothur.linux.zip
 
 #If this is not the first time you have run this script, change the lines below by removing dependencies for steps already completed and then comment out the step lines.
 
