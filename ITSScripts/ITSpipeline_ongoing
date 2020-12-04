@@ -1,11 +1,20 @@
 #~/bin/bash -l
-#PBS -l walltime=48:00:00,nodes=1:ppn=24,mem=32gb
-#PBS -m abe
-#PBS -M galey004@d.umn.edu
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=24
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=32gb
+#SBATCH -t 48:00:00
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=galey004@umn.edu
+#SBATCH -p small
+#SBATCH -J ITSTEST
+#SBATCH -o %j.out
+#SBATCH -e %j.err
+
 TERM=linux
 export TERM
-export FASTQLOC=""
-export SITES="*NP* *BRL*"
+export FASTQLOC="/panfs/roc/groups/2/chun0157/data_release/umgc/miseq/200413_M00262_0047_000000000-J2LDF/Chun_Project_005_ITS_Redemult"
+export SITES="*NP*.gz *BRL*.gz"
 export MOTHURLOC="~/mothur"
 export PREFIX=its19
 export INTERPREFIX=mothur1
@@ -16,6 +25,13 @@ export REFERENCEFASTA=~/its_ref/UNITE.ITS1.good.fasta
 export REFERENCETAX=~/its_ref/ITS1.UNITE.good.full.taxonomy
 export FINALMOTHUR=mothur2
 export FINALFILENAME=pipeline_output.csv
+
+if [ ! -d "$WDIR" ]; then
+	echo "creating directory $WDIR"
+	mkdir $WDIR
+else
+	echo "$WDIR exists. Make sure this directory is empty before beginning."
+fi
 
 #copy the needed files from the shared directory and the 
 cp -r $MOTHURLOC $WDIR
