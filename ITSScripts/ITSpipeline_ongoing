@@ -40,7 +40,7 @@ if [ ! -f "$BATCH1" ]; then
 	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part1.batch
 fi
 if [ ! -f "$BATCH2" ]; then
-	echo "downloading $BATCH1"
+	echo "downloading $BATCH2"
 	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
 fi
 
