@@ -34,6 +34,17 @@ else
 	echo "$WDIR exists. Make sure this directory is empty before beginning if you are not resuming a workflow."
 fi
 
+BATCH1=its_part1.batch
+BATCH2=its_part2.batch
+if [ ! -f "$BATCH1" ]; then
+	echo "downloading $BATCH1"
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part1.batch
+fi
+if [ ! -f "$BATCH2" ]; then
+	echo "downloading $BATCH2"
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
+fi
+
 #If this is not the first time you have run this script, change the lines below by removing dependencies for steps already completed and then comment out the step lines.
 
 job1=$(sbatch --parsable ~/itspipe1.sh)

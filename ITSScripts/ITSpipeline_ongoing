@@ -33,6 +33,17 @@ else
 	echo "$WDIR exists. Make sure this directory is empty before beginning."
 fi
 
+BATCH1=its_part1.batch
+BATCH2=its_part2.batch
+if [ ! -f "$BATCH1" ]; then
+	echo "downloading $BATCH1"
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part1.batch
+fi
+if [ ! -f "$BATCH2" ]; then
+	echo "downloading $BATCH1"
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
+fi
+
 #copy the needed files from the shared directory and the 
 cp -r $MOTHURLOC $WDIR
 cd $FASTQLOC
@@ -75,7 +86,7 @@ module load python
 PYSCRIPT1=create_accnos.py
 if [ ! -f "$PYSCRIPT1" ]; then
 	echo "downloading create_accnos.py"
-	wget https://github.com/mgaley-004/MiSeq-Analysis/blob/main/ITSScripts/create_accnos.py
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/create_accnos.py
 else
 	echo "create_accnos.py exists, skipping download."
 fi
@@ -86,6 +97,7 @@ cp nontargets.accnos $WDIR/nontargets.accnos
 cp $ITSXOUT.ITS1.fasta $WDIR/$ITSXOUT.ITS1.fasta
 
 echo "Resuming mothur to classify sequences."
+cd ../
 #resume mothur
 mothur/./mothur "its_part2.batch"
 
@@ -94,7 +106,7 @@ mothur/./mothur "its_part2.batch"
 PYSCRIPT2=computePercentIdentityParallel.py
 if [ ! -f "$PYSCRIPT2" ]; then
 	echo "downloading computePercentIdentityParallel.py"
-	wget https://github.com/mgaley-004/MiSeq-Analysis/blob/main/ITSScripts/computePercentIdentityParallel.py
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/computePercentIdentityParallel.py
 else
 	echo "computePercentIdentityParallel.py exists, skipping download."
 fi

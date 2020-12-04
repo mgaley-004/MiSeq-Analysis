@@ -3,7 +3,7 @@
 PYSCRIPT2=computePercentIdentityParallel.py
 if [ ! -f "$PYSCRIPT2" ]; then
 	echo "downloading computePercentIdentityParallel.py"
-	wget https://github.com/mgaley-004/MiSeq-Analysis/blob/main/ITSScripts/computePercentIdentityParallel.py
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/computePercentIdentityParallel.py
 else
 	echo "computePercentIdentityParallel.py exists, skipping download."
 fi
