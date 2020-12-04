@@ -4,6 +4,9 @@
 #PBS -M galey004@d.umn.edu
 TERM=linux
 export TERM
+export FASTQLOC=""
+export SITES="*NP* *BRL*"
+export MOTHURLOC="~/mothur"
 export PREFIX=its19
 export INTERPREFIX=mothur1
 export ITSXOUT=itsxo
@@ -13,6 +16,11 @@ export REFERENCEFASTA=~/its_ref/UNITE.ITS1.good.fasta
 export REFERENCETAX=~/its_ref/ITS1.UNITE.good.full.taxonomy
 export FINALMOTHUR=mothur2
 export FINALFILENAME=pipeline_output.csv
+
+#copy the needed files from the shared directory and the 
+cp -r $MOTHURLOC $WDIR
+cd $FASTQLOC
+cp $SITES $WDIR
 
 #change to scratch directory
 cd $WDIR
