@@ -1,0 +1,81 @@
+#~/bin/bash -l
+#PBS -l walltime=48:00:00,nodes=1:ppn=24,mem=32gb
+#PBS -m abe
+#PBS -M galey004@d.umn.edu
+TERM=linux
+export TERM
+export PREFIX=its19
+export INTERPREFIX=mothur1
+export ITSXOUT=itsxo
+export PROCESSORS=$(nproc)
+export WDIR="/scratch.global/galey_its"
+export REFERENCEFASTA=~/its_ref/UNITE.ITS1.good.fasta
+export REFERENCETAX=~/its_ref/ITS1.UNITE.good.full.taxonomy
+export FINALMOTHUR=mothur2
+export FINALFILENAME=pipeline_output.csv
+
+#change to scratch directory
+cd $WDIR
+
+#this first mothur batch script processes the fastq files and exports raw sequences
+mothur/./mothur "its_part1.batch"
+
+#perl and hmmer are needed to run itsx
+module load perl
+module load hmmer/3.1-snap20121016
+
+#download itsx and extract it only if it ITSx_1.1.2 is not already installed in folder
+FILE=ITSx_1.1.2
+if [ ! -d "$FILE" ]; then
+	echo "downloading ITSx"
+	wget https://microbiology.se/sw/ITSx_1.1.2.tar.gz
+	tar -xvf ITSx_1.1.2.tar.gz
+else
+	echo "ITSx exists, skipping download."
+fi
+
+#move the output of count.seqs to the itsx folder and then enter the folder
+echo "Copying mothur output1 to ITSx folder"
+cp $INTERPREFIX.fasta ITSx_1.1.2/$INTERPREFIX.fasta
+cd ITSx_1.1.2
+
+echo "Running ITSx on $INTERPREFIX.fasta"
+#this line runs ITSx and extracts ITS1 and ITS2, then saves them as new fasta files. It also makes a summary.
+./ITSx -i $INTERPREFIX.fasta -o $ITSXOUT -t f --cpu $PROCESSORS --summary T --graphical F --fasta T --preserve T --save_regions ITS1,ITS2 --anchor HMM
+
+#to resume mothur, we have to remove sequences that didn't contain ITS1 from the count file. We will create a .accnos file using the original input and the ITS1 fasta files
+
+#load python
+module load python
+#run the create_accnos python script
+PYSCRIPT1=create_accnos.py
+if [ ! -f "$PYSCRIPT1" ]; then
+	echo "downloading create_accnos.py"
+	wget https://github.com/mgaley-004/MiSeq-Analysis/blob/main/ITSScripts/create_accnos.py
+else
+	echo "create_accnos.py exists, skipping download."
+fi
+
+echo "Running create_accnos.py"
+python create_accnos.py $ITSXOUT.ITS1.fasta $INTERPREFIX.fasta nontargets.accnos
+cp nontargets.accnos $WDIR/nontargets.accnos
+cp $ITSXOUT.ITS1.fasta $WDIR/$ITSXOUT.ITS1.fasta
+
+echo "Resuming mothur to classify sequences."
+#resume mothur
+mothur/./mothur "its_part2.batch"
+
+#now calculate percent identity of the sequences using python
+#to use this script, supply in order the output name you would like, the reference fasta file, the taxonomy file that mothur created for sequences (not the cons.taxonomy file for otus and not the equalized taxonomy file), and the last fasta file that mothur created. This script should fill those in for you if you've changed the variables at the top of the script.
+PYSCRIPT2=computePercentIdentityParallel.py
+if [ ! -f "$PYSCRIPT2" ]; then
+	echo "downloading computePercentIdentityParallel.py"
+	wget https://github.com/mgaley-004/MiSeq-Analysis/blob/main/ITSScripts/computePercentIdentityParallel.py
+else
+	echo "computePercentIdentityParallel.py exists, skipping download."
+fi
+
+echo "Computing percent identity"
+
+python computePercentIdentityParallel.py $FINALFILENAME $REFERENCEFASTA $FINALMOTHUR.taxonomy $FINALMOTHUR.fasta
+#from here we will use some sort of thresholding to assign confidence in taxonomic IDs.
