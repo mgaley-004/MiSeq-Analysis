@@ -20,7 +20,7 @@ export ITSXOUT=itsxo
 export PROCESSORS=$(nproc)
 export WDIR="/scratch.global/galey_ex"
 export REFERENCEFASTA=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.fasta
-export REFERENCETAX=/panfs/roc/groups/2/chun0157/shared/ITS1.UNITE.good.full.taxonomy
+export REFERENCETAX=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.full.taxonomy
 export FINALMOTHUR=mothur2
 export FINALFILENAME=pipeline_output.csv
 
