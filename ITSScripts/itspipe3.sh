@@ -17,5 +17,8 @@ cp nontargets.accnos $WDIR/nontargets.accnos
 cp $ITSXOUT.ITS1.fasta $WDIR/$ITSXOUT.ITS1.fasta
 
 echo "Resuming mothur to classify sequences."
+#make a copy of blast
+cp -r mothur/blast .
+
 #resume mothur
 mothur/./mothur "its_part2.batch"
