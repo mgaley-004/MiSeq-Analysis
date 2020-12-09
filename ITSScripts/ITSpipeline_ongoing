@@ -1,4 +1,4 @@
-#~/bin/bash -l
+#!/bin/bash -l
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
 #SBATCH --cpus-per-task=1
@@ -19,7 +19,7 @@ export PREFIX=its19
 export INTERPREFIX=mothur1
 export ITSXOUT=itsxo
 export PROCESSORS=$(nproc)
-export WDIR="/scratch.global/galey_ex"
+export WDIR="/scratch.global/galey_example"
 export REFERENCEFASTA=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.fasta
 export REFERENCETAX=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.full.taxonomy
 export FINALMOTHUR=mothur2
