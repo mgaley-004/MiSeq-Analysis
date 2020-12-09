@@ -87,9 +87,6 @@ def collect_results(result):
     global results
     results.append(result)
     
-def intermediate():
-    
-    
 if __name__ == "__main__":
     outname = str(sys.argv[1])
     #reftax = str(sys.argv[2])
