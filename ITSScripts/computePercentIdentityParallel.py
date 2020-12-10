@@ -124,8 +124,8 @@ if __name__ == "__main__":
     pool.close()
     pool.join()
     
-    getGenusDiv(x, spdfc, 50) for x in genera[:10]
-    [getGenusDiv(x, spdfc, 50) for x in genera[:10]]
+    #getGenusDiv(x, spdfc, 50) for x in genera[:10]
+    #[getGenusDiv(x, spdfc, 50) for x in genera[:10]]
     
     results.sort(key=lambda x: x[0])
     finaldfs = [r for i,r in results]

@@ -117,8 +117,11 @@ if [ ! -f "$PYSCRIPT2" ]; then
 else
 	echo "computePercentIdentityParallel.py exists, skipping download."
 fi
+echo "installing dependencies"
+pip install pandas
+pip install biopython
 
 echo "Computing percent identity"
 
-python computePercentIdentityParallel.py $FINALFILENAME $REFERENCEFASTA $FINALMOTHUR.taxonomy $FINALMOTHUR.fasta
+python computePercentIdentityParallel.py $FINALFILENAME $REFERENCEFASTA $FINALMOTHUR.1.cons.taxonomy $FINALMOTHUR.fasta
 #from here we will use some sort of thresholding to assign confidence in taxonomic IDs.
