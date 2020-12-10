@@ -18,7 +18,7 @@ export SITES="*NP*.gz *BRL*.gz"
 export PREFIX=its19
 export INTERPREFIX=mothur1
 export ITSXOUT=itsxo
-export PROCESSORS=$(nproc)
+export PROCESSORS=24
 export WDIR="/scratch.global/galey_example"
 export REFERENCEFASTA=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.fasta
 export REFERENCETAX=/panfs/roc/groups/2/chun0157/shared/UNITE.ITS1.good.full.taxonomy
@@ -111,11 +111,18 @@ mothur/./mothur "its_part2.batch"
 #now calculate percent identity of the sequences using python
 #to use this script, supply in order the output name you would like, the reference fasta file, the taxonomy file that mothur created for sequences (not the cons.taxonomy file for otus and not the equalized taxonomy file), and the last fasta file that mothur created. This script should fill those in for you if you've changed the variables at the top of the script.
 PYSCRIPT2=computePercentIdentityParallel.py
+PYSCRIPT3=runCPI.py
 if [ ! -f "$PYSCRIPT2" ]; then
 	echo "downloading computePercentIdentityParallel.py"
 	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/computePercentIdentityParallel.py
 else
 	echo "computePercentIdentityParallel.py exists, skipping download."
+fi
+if [ ! -f "$PYSCRIPT3" ]; then
+	echo "downloading runCPI.py"
+	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/runCPI.py
+else
+	echo "runCPI.py exists, skipping download."
 fi
 echo "installing dependencies"
 pip install pandas
@@ -123,5 +130,5 @@ pip install biopython
 
 echo "Computing percent identity"
 
-python computePercentIdentityParallel.py $FINALFILENAME $REFERENCEFASTA $FINALMOTHUR.1.cons.taxonomy $FINALMOTHUR.fasta
+python runCPI.py $FINALFILENAME $REFERENCEFASTA $FINALMOTHUR.taxonomy $FINALMOTHUR.fasta $PROCESSORS
 #from here we will use some sort of thresholding to assign confidence in taxonomic IDs.

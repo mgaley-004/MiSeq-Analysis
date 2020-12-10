@@ -8,9 +8,6 @@ from Bio.pairwise2 import format_alignment
 import multiprocessing as mp
 import random
 
-
-results = []
- 
  
 def percIdentity(analign): 
     startalign = analign[-2] 
