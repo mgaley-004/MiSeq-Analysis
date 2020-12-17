@@ -1,10 +1,10 @@
-## Chun Lab Repository
+## HTS Analysis Repository
 
 A home for R, mothur, and some python based solutions for analysing your HTS datasets.
 
 ### Tutorials
 
-Follow these standard workflows for a jumping off point in your analyses.
+Follow these standard workflows for a jumping off point in your HTS dataset analysis.
 
 - [FastQ to Mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/fastQ2Mothur.html)
 - Data Cleanup and Organization in R
