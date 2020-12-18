@@ -4,7 +4,7 @@ A home for R, mothur, and some python based solutions for analysing your HTS dat
 
 ### Tutorials
 
-Follow these standard workflows for a jumping off point in your HTS dataset analysis.
+Follow these standard workflows for a jumping off point.
 
 - [FastQ to Mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/fastQ2Mothur.html)
 - Data Cleanup and Organization in R
@@ -19,6 +19,7 @@ Follow these standard workflows for a jumping off point in your HTS dataset anal
 
 - [Installing Python](https://mgaley-004.github.io/MiSeq-Analysis/Help/Python.html)
 - [SLURM computing](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SLURM/SlurmTransition.html) [(PDF)](https://mgaley-004.github.io/MiSeq-Analysis/Help/meeting121820.pdf)
+    - Download metadata for this tutorial [here](https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/Help/example_metadata.csv).
 
 ### Other Helpful Packages and Tutorials
 
