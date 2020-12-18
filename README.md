@@ -19,6 +19,7 @@ Follow these standard workflows for a jumping off point.
 
 - [Installing Python](https://mgaley-004.github.io/MiSeq-Analysis/Help/Python.html)
 - [SLURM computing](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SLURM/SlurmTransition.html) [(PDF)](https://mgaley-004.github.io/MiSeq-Analysis/Help/meeting121820.pdf)
+    - Download metadata for this tutorial [here](https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/Help/example_metadata.csv).
 
 ### Other Helpful Packages and Tutorials
 
