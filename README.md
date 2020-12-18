@@ -18,7 +18,7 @@ Follow these standard workflows for a jumping off point in your HTS dataset anal
 ### General Help
 
 - [Installing Python](https://mgaley-004.github.io/MiSeq-Analysis/Help/Python.html)
-- [SLURM computing](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SLURM/SlurmTransition.html)[(PDF)](https://mgaley-004.github.io/MiSeq-Analysis/Help/meeting121820.pdf)
+- [SLURM computing](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SLURM/SlurmTransition.html) [(PDF)](https://mgaley-004.github.io/MiSeq-Analysis/Help/meeting121820.pdf)
 
 ### Other Helpful Packages and Tutorials
 
