@@ -37,11 +37,11 @@ BATCH1=its_part1.batch
 BATCH2=its_part2.batch
 if [ ! -f "$BATCH1" ]; then
 	echo "downloading $BATCH1"
-	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part1.batch
+	wget -N https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part1.batch
 fi
 if [ ! -f "$BATCH2" ]; then
 	echo "downloading $BATCH2"
-	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
+	wget -N https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/its_part2.batch
 fi
 
 #install the latest copy of mothur
@@ -66,7 +66,7 @@ module load hmmer/3.1-snap20121016
 FILE=ITSx_1.1.2
 if [ ! -d "$FILE" ]; then
 	echo "downloading ITSx"
-	wget https://microbiology.se/sw/ITSx_1.1.2.tar.gz
+	wget -N https://microbiology.se/sw/ITSx_1.1.2.tar.gz
 	tar -xvf ITSx_1.1.2.tar.gz
 else
 	echo "ITSx exists, skipping download."
@@ -89,7 +89,7 @@ module load python
 PYSCRIPT1=create_accnos.py
 if [ ! -f "$PYSCRIPT1" ]; then
 	echo "downloading create_accnos.py"
-	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/create_accnos.py
+	wget -N https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/create_accnos.py
 else
 	echo "create_accnos.py exists, skipping download."
 fi
@@ -114,19 +114,19 @@ PYSCRIPT2=computePercentIdentityParallel.py
 PYSCRIPT3=runCPI.py
 if [ ! -f "$PYSCRIPT2" ]; then
 	echo "downloading computePercentIdentityParallel.py"
-	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/computePercentIdentityParallel.py
+	wget -N https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/computePercentIdentityParallel.py
 else
 	echo "computePercentIdentityParallel.py exists, skipping download."
 fi
 if [ ! -f "$PYSCRIPT3" ]; then
 	echo "downloading runCPI.py"
-	wget https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/runCPI.py
+	wget -N https://raw.githubusercontent.com/mgaley-004/MiSeq-Analysis/main/ITSScripts/runCPI.py
 else
 	echo "runCPI.py exists, skipping download."
 fi
 echo "installing dependencies"
-pip install pandas
-pip install biopython
+pip install --user pandas
+pip install --user biopython
 
 echo "Computing percent identity"
 
