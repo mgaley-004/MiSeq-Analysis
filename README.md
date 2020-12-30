@@ -10,7 +10,7 @@ Follow these standard workflows for a jumping off point.
 - Data Cleanup and Organization in R
 - Rarefactions and Diversity
 - [Ordinations and Redundancy Analysis](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/ordinationRDA.html)
-- Describing Major Lineages
+- [Describing Major Lineages and Differential Abundance](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/MajorTaxonomicGroups.html)
 - [FAPROTAX and Functions](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/faprotax_demo.html)
 - [Source Sink Dynamics](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SourceSink.html)
 
