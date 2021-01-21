@@ -7,5 +7,5 @@ classify.seqs(fasta=current, count=current, reference=$REFERENCEFASTA, taxonomy=
 phylotype(taxonomy=current, count=current)
 make.shared(list=current, count=current, label=1)
 classify.otu(list=current, count=current, taxonomy=current, label=1)
-rename.file(fasta=current, taxonomy=current, count=current, prefix=$FINALMOTHUR)
+rename.file(fasta=current, constaxonomy=current, count=current, prefix=$FINALMOTHUR)
 quit()
