@@ -23,7 +23,7 @@ Also remember to be polite and never work out of the home drive. Use the global 
 
 ```{bash, eval=FALSE}
 set.dir(output=/scratch.global/yourname_suffix, input=/scratch.global/yourname_suffix);
-make.file(inputdir=/scratch.global/yourname_suffix)
+make.file(inputdir=/scratch.global/yourname_suffix, type=gz, prefix=wr18)
 ```
 
 Examine the .files that mothur just created. It should have three columns, pairing your forward and reverse read files with a sample name that mothur generates. You should change these sample names now to match the sample names in your metadata file.
@@ -96,7 +96,7 @@ summary.seqs(fasta=current, count=current);
 chimera.vsearch(fasta=current, count=current, dereplicate=t, vsearch=/scratch.global/galey_wr18/mothur/vsearch);
 remove.seqs(fasta=wr18.trim.contigs.good.unique.good.filter.unique.precluster.fasta, accnos=current);
 summary.seqs(fasta=current, count=current);
-classify.seqs(fasta=current, count=current, reference=silva.nr_v138.pcr.v4.align, taxonomy=~/reference/silva.nr_v138.tax, cutoff=80);
+classify.seqs(fasta=current, count=current, reference=silva.nr_v138.pcr.v3v4.align, taxonomy=~/reference/silva.nr_v138.tax, cutoff=80);
 remove.lineage(fasta=current, count=current, taxonomy=current, taxon=Chloroplast-Mitochondria-unknown-Archaea-Eukaryota);
 summary.seqs(fasta=current, count=current);
 summary.tax(taxonomy=current, count=current);
