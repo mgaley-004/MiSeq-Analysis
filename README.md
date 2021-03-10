@@ -2,7 +2,7 @@
 
 A home for R, mothur, and some python based solutions for analysing your HTS datasets.
 
-### Tutorials
+### Tutorials/SOPs
 
 Follow these standard workflows for a jumping off point.
 
