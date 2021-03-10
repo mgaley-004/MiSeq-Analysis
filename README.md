@@ -49,7 +49,7 @@ Follow these standard workflows for a jumping off point.
 - [SLURM computing](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/SLURM/SlurmTransition.html) [(PDF)](https://mgaley-004.github.io/MiSeq-Analysis/Help/meeting121820.pdf)
   - Download metadata for this tutorial [here](https://github.com/mgaley-004/MiSeq-Analysis/tree/main/Help).
   - This tutorial is slightly outdated. MSI has retired login nodes for both `sftp` and `ssh` access. Now connect directly to msi using `ssh mesabi.msi.umn.edu -l yourx500` or `ssh mangi.msi.umn.edu -l yourx500` and only login once!
-  - 
+ 
 ### Other Helpful Packages and Tutorials
 
 - Having trouble in mothur? Check the [SOP](https://mothur.org/wiki/miseq_sop/) and the [wiki](https://mothur.org/wiki/mothur_manual/)
