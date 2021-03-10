@@ -6,7 +6,8 @@ A home for R, mothur, and some python based solutions for analysing your HTS dat
 
 Follow these standard workflows for a jumping off point.
 
-- [FastQ to Mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/fastQ2Mothur.html)
+- [Aligning and Classifying Sequences using mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/AligningSequences.html) (formerly FastQ to Mothur)
+  - Start here
 - Data Cleanup and Organization in R
 - [Read Scaling, Normalization, Transformation, Rarefactions and Diversity](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/rarefactions.html)
 - [Ordinations and Redundancy Analysis](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/ordinationRDA.html)
