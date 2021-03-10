@@ -17,6 +17,8 @@ Follow these standard workflows for a jumping off point.
   - Creating an even depth dataset
 - [Ordinations and Redundancy Analysis](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/ordinationRDA.html)
   - Formerly known as beta diversity analysis
+  - The differences between distance metrics
+    - Bray Curtis, Jaccard, Manhattan, etc.
   - Mapping categorical and scalar values onto your microbial community
     - Principle components of analysis (PCA)
     - Principle coordinates of analysis (PCoA)
