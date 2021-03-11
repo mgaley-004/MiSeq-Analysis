@@ -8,7 +8,11 @@ Follow these standard workflows for a jumping off point.
 
 - [Aligning and Classifying Sequences using mothur](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/AligningSequences.html) (formerly FastQ to Mothur)
   - Start here. Learn how to use the command line program `mothur` to align and identify DNA sequences from several regions of 16S.
-- Data Cleanup and Organization in R
+- [Data Organization Throughout Your Project](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/DataOrganization.html)
+  - Advice on setting up your metadata
+  - Moving files to and from MSI
+  - MSI workspace organization
+  - R workspace organization
 - [Read Scaling, Normalization, Transformation, Rarefactions and Diversity](https://mgaley-004.github.io/MiSeq-Analysis/Tutorials/rarefactions.html)
   - How to import your mothur output files into R for analysis
   - basics of phyloseq
