@@ -67,5 +67,7 @@ Follow these standard workflows for a jumping off point.
 
 ### Authors
 Miranda Galey [@mgaley-004](https://github.com/mgaley-004/)
+
 Contact at galey004-at-umn.edu
+
 [Learn more about my work](https://miranda-galey.owlstown.net/)
